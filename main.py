@@ -14,6 +14,6 @@ import src.parser as parser
 #####
 collection = {}
 
-parser.innateDbGene(collection, 'data/InnateDB_genes.tsv')
+parser.uniprotDbGene(collection, 'data/test.xml', "test")
 
 print(len(collection))
