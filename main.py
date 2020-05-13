@@ -31,12 +31,8 @@ def verifFile(filename):
 log.debug("Start")
 collection = {}
 
-<<<<<<< HEAD
-parser.uniprotDbGene(collection, 'data/test.xml', "test")
-=======
 log.info("parsing file 'data/InnateDB_genes.tsv'")
 parser.innateDbGene(collection, 'data/InnateDB_genes.tsv')
->>>>>>> odd
 
 print(len(collection))
 
