@@ -26,6 +26,10 @@ parser = argparse.ArgumentParser(
     x.py
     ''')
 
+parser.add_argument('-o', '--output', type=str,
+                    help='file path to save the data')
+parser.add_argument('-f', '--force', action="store_true",
+                    help='force action (write)')
 parser.add_argument('-v', '--verbose', action="store_true",
                     help="Active le mode verbose (mode level debug INFO)")
 args = parser.parse_args()
@@ -38,11 +42,11 @@ logger = logging.getLogger()
 # if "-v" in sys.argv:
 if args.verbose:
     LEVEL = "DEBUG"  #INFO# celui du logger
-    LOG_LEVEL = logging.DEBUG
+    LOG_LEVEL = logging.INFO
     PRINT_LEVEL = logging.DEBUG
 else:
     LEVEL = "INFO"
-    LOG_LEVEL = logging.INFO
+    LOG_LEVEL = logging.WARNING
     PRINT_LEVEL = logging.INFO
 logger.setLevel(LEVEL)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] :: %(message)s')
