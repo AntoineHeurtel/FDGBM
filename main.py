@@ -5,8 +5,8 @@
 ##########################################################
 # Librairie pour le stage M1 2020  #
 ##########################################################
-import src.logger
-import src.parser
+import src.logger as logger
+import src.parser as parser
 
 
 #####
