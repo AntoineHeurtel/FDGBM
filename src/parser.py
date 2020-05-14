@@ -61,7 +61,7 @@ def innateDbGene(data, filename):
     return data
 
 
-def uniprotDbGene(data, filename, function):
+def uniprotDbGene(data, filename,function):
     """
     parser file (xml) from Uniprot. xml file is list of protein with a same function.
     you need to give the function of these genes in the third argument.
@@ -69,18 +69,30 @@ def uniprotDbGene(data, filename, function):
     OUT : dic
     """
     xmlFile = minidom.parse(filename)
-    Proteinlist = xmlFile.getElementsByTagName('entry')
-    for i in Proteinlist:
+    for i in xmlFile.getElementsByTagName('entry'):
         fullName = i.getElementsByTagName('fullName')[0].firstChild.data
         print(fullName)
         accession = i.getElementsByTagName('accession')[0].firstChild.data
-        print(accession)
-        sequence = i.getElementsByTagName('sequence')[0].firstChild.data
-        print(sequence)
+        if not i.getElementsByTagName('sequence')[0].firstChild:
+            sequence=""
+        else:
+            sequence = i.getElementsByTagName('sequence')[0].firstChild.data
         Name = i.getElementsByTagName('name')[0].firstChild.data
-        print(Name)
         taxID = i.getElementsByTagName('dbReference')[0]
-        if taxID.attribut == 'NCBI':
+        if taxID.getAttribute('type')=='NCBI Taxonomy':
+            taxID=taxID.getAttribute('id')
+        property= i.getElementsByTagName('property')
+        for j in property:
+            if j.getAttribute('type')=='gene ID':
+                geneID=j.getAttribute('value')
+        Golist=list()
+        dbref= i.getElementsByTagName('dbReference')
+        for z in dbref:
+            if z.getAttribute('type')=='GO':
+                Goterme=z.getElementsByTagName('property')[0]
+                Goterme=Goterme.getAttribute('value')
+                Golist.append(Goterme)
+        data[geneID] = Gene(geneID,Name, fullName, "Uniprot", function, accession, sequence, taxID, Golist)
     return data
 
 

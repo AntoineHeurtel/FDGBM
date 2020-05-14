@@ -34,6 +34,8 @@ collection = {}
 log.info("parsing file 'data/InnateDB_genes.tsv'")
 parser.innateDbGene(collection, 'data/InnateDB_genes.tsv')
 
+log.info("parsing file Uniprot")
+parser.uniprotDbGene(collection,'data/Uniprot_immune_HomoSapiens.xml',"immunite")
 print(len(collection))
 
 if args.output and verifFile(args.output):
