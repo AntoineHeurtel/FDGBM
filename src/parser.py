@@ -14,15 +14,16 @@ from src.logger import logger as log
 
 class Gene():
     def __init__(self, id, name, fulname, source, function, accession, sequence, taxid, goterms):
+        #function write : header = 'id\ttaxid\tname\tfulname\taccession\tsource\tfunction\tgoterms\tsequence'
         self.id = id
+        self.taxid = taxid
         self.name = name
         self.fulname = fulname
+        self.accession = accession #code accession Uniprot only
         self.source = source #name of database
         self.function = function #function of gene (immuno, metabo, reproduction)
-        self.accession = accession #code accession Uniprot only
-        self.sequence = sequence
         self.goterms = goterms
-        self.taxid = taxid
+        self.sequence = sequence
 
     def __str__(self):
         return f"{self.taxid}:{self.id}, {self.name} from {self.source}"
@@ -38,6 +39,18 @@ class Gene():
             log.warning("error to download the sequence from uniprot")
             pass
         self.sequence = "".join(r.text.split("\n")[1:])
+
+    def echo(self, sep='\t'):
+        """
+        write all attributs
+        """
+        line = []
+        for attribute in self.__dict__:
+            if type(attribute) == type([]):
+                buffer = ",".join(self.__dict__[attribute])
+                line.append(buffer)
+            line.append(self.__dict__[attribute])
+        return sep.join(line)
 
 
 ##############################
@@ -57,7 +70,7 @@ def innateDbGene(data, filename):
                 #traitement GO terms
                 goTerms = re.findall("GO:[0-9]+", column[14])
                 data[geneID] = Gene(geneID, column[5], column[6], "innateDb", column[15], "", "", column[2], ",".join(goTerms))
-                log.debug(str(data[geneID]))
+                log.debug(str(data[geneID].echo()))
     return data
 
 
@@ -101,15 +114,24 @@ def writter(data, filename):
     IN : dic + filename
     OUT : write a tsv filename
     """
-    header = 'id\ttaxid\tname\tfulname\tfunction\tgoterms\tsequence'
+    header = 'id\ttaxid\tname\tfulname\taccession\tsource\tfunction\tgoterms\tsequence'
     with open(filename, 'w') as file:
         file.write(header + '\n')
         for geneID in data:
-            id = data[geneID].id
-            taxid = data[geneID].taxid
-            name = data[geneID].name
-            function = data[geneID].function
-            goterms = data[geneID].goterms
-            seq = data[geneID].sequence
-            line = f"{id}\t{taxid}\t{name}\t{function}\t{goterms}\t{seq}"
-            file.write(line + '\n')
+            file.write(data[geneID].echo() + '\n')
+
+
+def loadData(data, filename):
+    """
+    Load data from a tsvfile (writed by script)
+    IN : data (void dic) + filename
+    OUT : data (dic)
+    """
+    with open(filename, 'r') as tsvFile:
+        for row in tsvFile.readlines()[1:]:
+            log.debug('read ' + str(row))
+            column = row.rstrip().split('\t')
+            if column[0] not in data and len(column) >= 9:
+                goTerms = column[7].split(',')
+                data[column[0]] = Gene(column[0], column[2], column[3], column[5], column[6], column[4], column[8], column[1], goTerms)
+    return data

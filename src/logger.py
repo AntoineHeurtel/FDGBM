@@ -28,6 +28,8 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument('-o', '--output', type=str,
                     help='file path to save the data')
+parser.add_argument('-l', '--load', type=str,
+                    help='file path to save the data')
 parser.add_argument('-f', '--force', action="store_true",
                     help='force action (write)')
 parser.add_argument('-v', '--verbose', action="store_true",

@@ -39,5 +39,12 @@ parser.uniprotDbGene(collection,'data/Uniprot_immune_HomoSapiens.xml',"immunite"
 print(len(collection))
 
 if args.output and verifFile(args.output):
+    log.info('export data in ' + args.output)
     parser.writter(collection, args.output)
+
+if args.load and verifFile(args.load):
+    log.info('load data from ' + args.load)
+    collection = {}
+    collection2 = parser.loadData(collection, args.load)
+    print(collection2)
 log.debug("end")
