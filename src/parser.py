@@ -122,10 +122,8 @@ def uniprotDbGene(data, filename,function):
         fullName = i.getElementsByTagName('fullName')[0].firstChild.data
         print(fullName)
         accession = i.getElementsByTagName('accession')[0].firstChild.data
-        if not i.getElementsByTagName('sequence')[0].firstChild:
-            sequence = ""
-        else:
-            sequence = i.getElementsByTagName('sequence')[0].firstChild.data
+        test= i.getElementsByTagName('sequence')
+        sequence=test[-1].firstChild.data
         Name = i.getElementsByTagName('name')[0].firstChild.data
         taxID = i.getElementsByTagName('dbReference')[0]
         if taxID.getAttribute('type') == 'NCBI Taxonomy':
@@ -141,7 +139,7 @@ def uniprotDbGene(data, filename,function):
                 Goterme = z.getElementsByTagName('property')[0]
                 Goterme = Goterme.getAttribute('value')
                 Golist.append(Goterme)
-        data[geneID] = Gene(geneID,Name, fullName, "Uniprot", function, accession, sequence, taxID, Golist)
+        data[geneID] = Gene(geneID,Name, fullName, "Uniprot", function, accession, sequence , taxID, Golist)
     return data
 
 
