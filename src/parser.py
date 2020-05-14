@@ -8,6 +8,8 @@
 ##########################################################
 import requests
 import re
+import urllib.parse
+import urllib.request
 
 from xml.dom import minidom
 from src.logger import logger as log
@@ -35,10 +37,36 @@ class Gene():
         queryURL = "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=-1&accession=" + self.accession
         r = requests.get(queryURL, headers={"Accept": "text/x-fasta"})
         if not r.ok:
-            r.raise_for_status()
+            try:
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                log.critical(str(e) + " with id " + self.id)
             log.warning("error to download the sequence from uniprot")
-            pass
-        self.sequence = "".join(r.text.split("\n")[1:])
+            self.sequence = ""
+        else:
+            self.sequence = "".join(r.text.split("\n")[1:])
+
+    def accEnsembl(self):
+        """
+        Get accession from Ensemble ID to Uniprot
+        """
+        url = 'https://www.uniprot.org/uploadlists/'
+        params = {'from': 'ENSEMBL_ID', 'to': 'ACC', 'format': 'tab', 'query': self.id}
+        data = urllib.parse.urlencode(params)
+        data = data.encode('utf-8')
+        req = urllib.request.Request(url, data)
+        with urllib.request.urlopen(req) as f:
+            response = f.read()
+        accList = re.findall('[0-9A-Z]+',response.decode('utf-8'))
+        #Verification of good request
+        if len(accList[-1]) >= 5:
+            self.accession = accList[-1]
+        elif len(accList) == 2:
+            #maybe no have accession found
+            self.accession = ""
+            log.warning("no accession uniprot found with id " + self.id)
+        else:
+            log.critical("unknow error with id " + self.id)
 
     def echo(self, sep='\t'):
         """
@@ -46,10 +74,11 @@ class Gene():
         """
         line = []
         for attribute in self.__dict__:
-            if type(attribute) == type([]):
+            if isinstance(self.__dict__[attribute], list):
                 buffer = ",".join(self.__dict__[attribute])
                 line.append(buffer)
-            line.append(self.__dict__[attribute])
+            else:
+                line.append(self.__dict__[attribute])
         return sep.join(line)
 
 
@@ -62,6 +91,7 @@ def innateDbGene(data, filename):
     IN : dic + tsv file
     OUT : dic
     """
+    number = 0
     with open(filename, newline='') as tsvFile:
         for row in tsvFile.readlines()[1:]:
             column = row.rstrip().split('\t')
@@ -70,7 +100,13 @@ def innateDbGene(data, filename):
                 #traitement GO terms
                 goTerms = re.findall("GO:[0-9]+", column[14])
                 data[geneID] = Gene(geneID, column[5], column[6], "innateDb", column[15], "", "", column[2], ",".join(goTerms))
-                log.debug(str(data[geneID].echo()))
+                if data[geneID].accession == "":
+                    data[geneID].accEnsembl()
+                if data[geneID].sequence == "" and data[geneID].accession != "":
+                    data[geneID].seqUniprot()
+                #log.debug(str(data[geneID].echo()))
+            number += 1
+    log.info("Parsed " + str(number) + " lines")
     return data
 
 
@@ -87,23 +123,23 @@ def uniprotDbGene(data, filename,function):
         print(fullName)
         accession = i.getElementsByTagName('accession')[0].firstChild.data
         if not i.getElementsByTagName('sequence')[0].firstChild:
-            sequence=""
+            sequence = ""
         else:
             sequence = i.getElementsByTagName('sequence')[0].firstChild.data
         Name = i.getElementsByTagName('name')[0].firstChild.data
         taxID = i.getElementsByTagName('dbReference')[0]
-        if taxID.getAttribute('type')=='NCBI Taxonomy':
-            taxID=taxID.getAttribute('id')
-        property= i.getElementsByTagName('property')
+        if taxID.getAttribute('type') == 'NCBI Taxonomy':
+            taxID = taxID.getAttribute('id')
+        property = i.getElementsByTagName('property')
         for j in property:
-            if j.getAttribute('type')=='gene ID':
-                geneID=j.getAttribute('value')
-        Golist=list()
-        dbref= i.getElementsByTagName('dbReference')
+            if j.getAttribute('type') == 'gene ID':
+                geneID = j.getAttribute('value')
+        Golist = list()
+        dbref = i.getElementsByTagName('dbReference')
         for z in dbref:
-            if z.getAttribute('type')=='GO':
-                Goterme=z.getElementsByTagName('property')[0]
-                Goterme=Goterme.getAttribute('value')
+            if z.getAttribute('type') == 'GO':
+                Goterme = z.getElementsByTagName('property')[0]
+                Goterme = Goterme.getAttribute('value')
                 Golist.append(Goterme)
         data[geneID] = Gene(geneID,Name, fullName, "Uniprot", function, accession, sequence, taxID, Golist)
     return data
