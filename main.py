@@ -17,7 +17,7 @@ from src.logger import args
 #####
 def verifFile(filename):
     if os.path.exists(filename) and not args.force:
-        log.warning(filename + " already exist")
+        log.warning(filename + " already exist, you can overwrite with -f option")
         return False
     elif os.path.exists(filename) and args.force:
         log.debug(filename + " will be overwrite")
@@ -25,26 +25,34 @@ def verifFile(filename):
     else:
         return True
 
+
 #####
 # Parser
 #####
-log.debug("Start")
-collection = {}
+if args.COMMANDS == "parser":
+    collection = {}
+    #parsing a tsv file download from innateDB
+    if args.innatedb:
+        log.info("parsing file 'data/InnateDB_genes.tsv'")
+        parser.innateDbGene(collection, args.innatedb)
 
-log.info("parsing file 'data/InnateDB_genes.tsv'")
-parser.innateDbGene(collection, 'data/InnateDB_genes.tsv')
-"""
-log.info("parsing file Uniprot")
-parser.uniprotDbGene(collection,'data/Uniprot_immune_HomoSapiens.xml',"immunite")
-"""
+    #parsing a xml file download from uniprot
+    if args.uniprot:
+        log.info("parsing file Uniprot")
+        parser.uniprotDbGene(collection, args.uniprot, "immunite")
 
-if args.output and verifFile(args.output):
-    log.info('export data in ' + args.output)
-    parser.writter(collection, args.output)
+    #save data in tsv file
+    if args.output and verifFile(args.output):
+        log.info('export data in ' + args.output)
+        parser.writter(collection, args.output)
 
-if args.load and verifFile(args.load):
+
+#####
+# Load data
+#####
+if args.COMMANDS == 'load' and verifFile(args.load):
     log.info('load data from ' + args.load)
     collection = {}
-    collection2 = parser.loadData(collection, args.load)
-    print(collection2)
-log.debug("end")
+    collection = parser.loadData(collection, args.load)
+    print(collection)
+log.debug("end code")
