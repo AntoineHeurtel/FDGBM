@@ -40,7 +40,7 @@ if args.COMMANDS == "parser":
     #parsing a xml file download from uniprot
     if args.uniprot:
         log.info("parsing file Uniprot")
-        parser.uniprotDbGene(collection, args.uniprot, "immunite")
+        parser.uniprotDbGene(collection, args.uniprot)
 
     #save data in tsv file
     if args.output and verifFile(args.output):

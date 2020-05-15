@@ -110,17 +110,15 @@ def innateDbGene(data, filename):
     return data
 
 
-def uniprotDbGene(data, filename,function):
+def uniprotDbGene(data, filename):
     """
     parser file (xml) from Uniprot. xml file is list of protein with a same function.
-    you need to give the function of these genes in the third argument.
     IN : dic + xml file
     OUT : dic
     """
     xmlFile = minidom.parse(filename)
     for i in xmlFile.getElementsByTagName('entry'):
         fullName = i.getElementsByTagName('fullName')[0].firstChild.data
-        print(fullName)
         accession = i.getElementsByTagName('accession')[0].firstChild.data
         test= i.getElementsByTagName('sequence')
         sequence=test[-1].firstChild.data
@@ -139,7 +137,7 @@ def uniprotDbGene(data, filename,function):
                 Goterme = z.getElementsByTagName('property')[0]
                 Goterme = Goterme.getAttribute('value')
                 Golist.append(Goterme)
-        data[geneID] = Gene(geneID,Name, fullName, "Uniprot", function, accession, sequence , taxID, Golist)
+        data[geneID] = Gene(geneID,Name, fullName, "Uniprot", " ", accession, sequence , taxID, Golist)
     return data
 
 
