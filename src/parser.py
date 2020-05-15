@@ -98,8 +98,9 @@ def innateDbGene(data, filename):
             geneID = column[3]
             if geneID not in data:
                 #traitement GO terms
-                goTerms = re.findall("GO:[0-9]+", column[14])
-                data[geneID] = Gene(geneID, column[5], column[6], "innateDb", column[15], "", "", column[2], ",".join(goTerms))
+                goTerms = column[14]
+                goTerms = goterms2xmlformat(goTerms)
+                data[geneID] = Gene(geneID, column[5], column[6], "innateDb", column[15], "", "", column[2], goTerms)
                 if data[geneID].accession == "":
                     data[geneID].accEnsembl()
                 if data[geneID].sequence == "" and data[geneID].accession != "":
@@ -152,6 +153,23 @@ def writter(data, filename):
         for geneID in data:
             file.write(data[geneID].echo() + '\n')
 
+def goterms2xmlformat(innateDBformat):
+    """
+    convert goTerms from innateDb to Uniprot format
+    """
+    liste=list()
+    test=innateDBformat.split('#')
+    for i in test:
+        test2=i.split('|')
+        if test2[2]=='biological_process':
+            a=str('P:'+test2[1])
+        elif test2[2]=='molecular_function':
+            a=str('F:'+test2[1])
+        else:
+            a=str('C:'+test2[1])
+        liste.append(a)
+    gotermsExact=','.join(liste)
+    return gotermsExact
 
 def loadData(data, filename):
     """
