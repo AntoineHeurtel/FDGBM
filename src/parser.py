@@ -163,9 +163,16 @@ def loadData(data, filename):
     """
     with open(filename, 'r') as tsvFile:
         for row in tsvFile.readlines()[1:]:
-            log.debug('read ' + str(row))
             column = row.rstrip().split('\t')
-            if column[0] not in data and len(column) >= 9:
-                goTerms = column[7].split(',')
-                data[column[0]] = Gene(column[0], column[2], column[3], column[5], column[6], column[4], column[8], column[1], goTerms)
+            if column[0] not in data:
+                try:
+                    goTerms = column[7].split(',')
+                    data[column[0]] = Gene(column[0], column[2], column[3], column[5], column[6], column[4], column[8], column[1], goTerms)
+                    log.debug(data[column[0]])
+                except IndexError as e:
+                    if len(column) == 8:
+                        data[column[0]] = Gene(column[0], column[2], column[3], column[5], column[6], column[4], "", column[1], goTerms)
+                        log.debug(data[column[0]])
+                    if len(column) <= 7:
+                        pass
     return data

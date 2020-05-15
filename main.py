@@ -50,9 +50,9 @@ if args.COMMANDS == "parser":
 #####
 # Load data
 #####
-if args.COMMANDS == 'load' and verifFile(args.load):
+if args.COMMANDS == 'load' and os.path.exists(args.load):
     log.info('load data from ' + args.load)
     collection = {}
     collection = parser.loadData(collection, args.load)
-    print(collection)
+    log.info("Load " + str(len(collection)) + " genes")
 log.debug("end code")
