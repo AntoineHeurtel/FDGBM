@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(
     x.py
     ''')
 
-parser.add_argument('COMMANDS', type=str, choices=['parser', 'load'],
+parser.add_argument('COMMANDS', type=str, choices=['parser', 'blast'],
                     help='commandes à exécuter')
 
 parser.add_argument('-u', '--uniprot', type=str,
@@ -34,6 +34,8 @@ parser.add_argument('-u', '--uniprot', type=str,
 parser.add_argument('-i', '--innatedb', type=str,
                     help='tsv file path to save the data')
 
+parser.add_argument('-n', '--number', type=int,
+                    help='to enter a number')
 parser.add_argument('-o', '--output', type=str,
                     help='file path to save the data')
 parser.add_argument('-l', '--load', type=str,

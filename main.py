@@ -7,6 +7,7 @@
 ##########################################################
 import os
 import src.parser as parser
+import src.blast as blast
 
 from src.logger import logger as log
 from src.logger import args
@@ -50,9 +51,24 @@ if args.COMMANDS == "parser":
 #####
 # Load data
 #####
-if args.COMMANDS == 'load' and os.path.exists(args.load):
+if args.load and os.path.exists(args.load):
     log.info('load data from ' + args.load)
     collection = {}
     collection = parser.loadData(collection, args.load)
     log.info("Load " + str(len(collection)) + " genes")
+
+
+#####
+# blast
+#####
+if args.COMMANDS == 'blast':
+    #generate a fasta file
+    if args.output and verifFile(args.output):
+        log.info('export data in ' + args.output)
+        if args.number:
+            blast.exportFasta(collection, args.output, int(args.number))
+        else:
+            blast.exportFasta(collection, args.output)
+
+
 log.debug("end code")
