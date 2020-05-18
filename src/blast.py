@@ -6,6 +6,8 @@
 # Librairie pour le stage M1 2020  #
 #      Sub module to blast
 ##########################################################
+import random
+
 from src.logger import logger as log
 
 def fasta(header, sequence, lenght=80):
@@ -29,9 +31,22 @@ def exportFasta(data, filename, number=0):
     """
     create a fasta file
     """
-    count = 1
     with open(filename, 'w') as fileFasta:
-        for gene in data:
+        if number < 0:
+            #gene random draw
+            listGenes = []
+            number = abs(number)
+            count = number
+            while count != 0:
+                #random draw in data and make sur of gene have a sequence
+                idGene = random.choice(list(data))
+                if data[idGene].sequence != "" and idGene not in listGenes:
+                    listGenes.append(idGene)
+                    count -= 1
+        else:
+            listGenes = data.keys()
+        count = 1
+        for gene in listGenes:
             if data[gene].sequence != "":
                 if number == 0:
                     line = fasta(data[gene].name, data[gene].sequence)

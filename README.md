@@ -39,7 +39,7 @@ This command
 
 Options available with parse are :
 - -o : to export sequence in a fasta file
-- -n : the n first gene (default with -o is all genes)
+- -n : the n first gene (n is optional, by default, with -o, is all genes). If n is < 0 (like `-n -20`), the genes will random draw.
 
 ## Other option available
 
