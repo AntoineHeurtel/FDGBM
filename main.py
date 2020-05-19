@@ -13,6 +13,9 @@ from src.logger import logger as log
 from src.logger import args
 
 
+#define dico for us data
+collection = {}
+
 #####
 # Functions
 #####
@@ -28,10 +31,18 @@ def verifFile(filename):
 
 
 #####
+# Load data
+#####
+if args.load and os.path.exists(args.load):
+    log.info('load data from ' + args.load)
+    collection = parser.loadData(collection, args.load)
+    log.info("Load " + str(len(collection)) + " genes")
+
+
+#####
 # Parser
 #####
 if args.COMMANDS == "parser":
-    collection = {}
     #parsing a tsv file download from innateDB
     if args.innatedb:
         log.info("parsing file 'data/InnateDB_genes.tsv'")
@@ -46,16 +57,6 @@ if args.COMMANDS == "parser":
     if args.output and verifFile(args.output):
         log.info('export data in ' + args.output)
         parser.writter(collection, args.output)
-
-
-#####
-# Load data
-#####
-if args.load and os.path.exists(args.load):
-    log.info('load data from ' + args.load)
-    collection = {}
-    collection = parser.loadData(collection, args.load)
-    log.info("Load " + str(len(collection)) + " genes")
 
 
 #####
