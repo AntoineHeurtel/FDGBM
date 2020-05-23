@@ -29,9 +29,10 @@ parser = argparse.ArgumentParser(
 parser.add_argument('COMMANDS', type=str, choices=['parser', 'blast'],
                     help='commandes à exécuter')
 
-parser.add_argument('-u', '--uniprot', type=str,
+#nargs='+' take 1 or more argument like -i Aa Bb Cc
+parser.add_argument('-u', '--uniprot', nargs='+', type=str,
                     help='xml file path to read the data')
-parser.add_argument('-i', '--innatedb', type=str,
+parser.add_argument('-i', '--innatedb', nargs='+', type=str,
                     help='tsv file path to save the data')
 
 parser.add_argument('-n', '--number', type=int,

@@ -45,13 +45,17 @@ if args.load and os.path.exists(args.load):
 if args.COMMANDS == "parser":
     #parsing a tsv file download from innateDB
     if args.innatedb:
-        log.info("parsing file 'data/InnateDB_genes.tsv'")
-        parser.innateDbGene(collection, args.innatedb)
+        for file in args.innatedb:
+            #to take multi file
+            log.info("parsing file InnateDB")
+            parser.innateDbGene(collection, file)
 
     #parsing a xml file download from uniprot
     if args.uniprot:
-        log.info("parsing file Uniprot")
-        parser.uniprotDbGene(collection, args.uniprot)
+        for file in args.uniprot:
+            #to take multi file
+            log.info("parsing file Uniprot")
+            parser.uniprotDbGene(collection, file)
 
     #save data in tsv file
     if args.output and verifFile(args.output):

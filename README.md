@@ -28,6 +28,8 @@ Options available with parse are :
 - -x file : to parse a xml file from uniprot
 - -i file : to parse a tsv file from innatdb
 
+If you want to parse multi file, it’s possible ! In fact, you can give multi path or file in arguments, like `-i file1 file2 file3`.
+
 ### what is a…
 
 - *xml file* : is a xml file downloaded from Uniprot.
