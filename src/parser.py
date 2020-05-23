@@ -10,6 +10,7 @@ import requests
 import re
 import urllib.parse
 import urllib.request
+import time
 
 from xml.dom import minidom
 from src.logger import logger as log
@@ -34,6 +35,9 @@ class Gene():
         """
         get sequence from Uniprot database
         """
+        if self.accession == "":
+            log.info('no sequence because no accession code for ' + self.id)
+            return ""
         queryURL = "https://www.ebi.ac.uk/proteins/api/proteins?offset=0&size=-1&accession=" + self.accession
         r = requests.get(queryURL, headers={"Accept": "text/x-fasta"})
         if not r.ok:
@@ -55,8 +59,28 @@ class Gene():
         data = urllib.parse.urlencode(params)
         data = data.encode('utf-8')
         req = urllib.request.Request(url, data)
-        with urllib.request.urlopen(req) as f:
-            response = f.read()
+        essai = 1
+        #request API Uniprot
+        while True:
+            try:
+                response = urllib.request.urlopen(req).read()
+                break
+            except urllib.error.HTTPError as e:
+                if e.code == 503 and essai < 5:
+                    log.info('Error 503, renew in 10 secondes')
+                    time.sleep(5)
+                    essai += 1
+                    pass
+                elif e.code == 400 and essai < 5:
+                    log.critical('Error 400 with ' + url + str(urllib.parse.urlencode(params)))
+                    time.sleep(5)
+                    essai += 1
+                elif essai > 5:
+                    log.warning('Error ' + str(e.code))
+                    break
+                else:
+                    log.debug(e.code)
+                    essai += 1
         accList = re.findall('[0-9A-Z]+',response.decode('utf-8'))
         #Verification of good request
         if len(accList[-1]) >= 5:
@@ -91,7 +115,8 @@ def innateDbGene(data, filename):
     IN : dic + tsv file
     OUT : dic
     """
-    number = 0
+    number = 1 #number of lines
+    workInProgress = 100 #when inform user
     with open(filename, newline='') as tsvFile:
         for row in tsvFile.readlines()[1:]:
             column = row.rstrip().split('\t')
@@ -102,12 +127,16 @@ def innateDbGene(data, filename):
                 goTerms = goterms2xmlformat(goTerms)
                 data[geneID] = Gene(geneID, column[5], column[6], "innateDb", column[15], "", "", column[2], goTerms)
                 if data[geneID].accession == "":
+                    #traitement accession
                     data[geneID].accEnsembl()
                 if data[geneID].sequence == "" and data[geneID].accession != "":
+                    #traitement sequence
                     data[geneID].seqUniprot()
                 #log.debug(str(data[geneID].echo()))
             number += 1
-    log.info("Parsed " + str(number) + " lines")
+            if number % workInProgress == 0:
+                log.info("Parsed " + str(number) + " lines")
+    log.info("Parsed a total of " + str(number) + " lines")
     return data
 
 
