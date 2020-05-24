@@ -39,7 +39,7 @@ parser.add_argument('-n', '--number', type=int,
                     help='to enter a number')
 parser.add_argument('-o', '--output', type=str,
                     help='file path to save the data')
-parser.add_argument('-l', '--load', type=str,
+parser.add_argument('-l', '--load', nargs='+', type=str,
                     help='file path to save the data')
 parser.add_argument('-f', '--force', action="store_true",
                     help='force action (write)')

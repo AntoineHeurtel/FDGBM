@@ -33,9 +33,11 @@ def verifFile(filename):
 #####
 # Load data
 #####
-if args.load and os.path.exists(args.load):
-    log.info('load data from ' + args.load)
-    collection = parser.loadData(collection, args.load)
+if args.load:
+    for file in args.load:
+        if os.path.exists(file):
+            log.info('load data from ' + file)
+            parser.loadData(collection, file)
     log.info("Load " + str(len(collection)) + " genes")
 
 
