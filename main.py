@@ -14,7 +14,8 @@ from src.logger import args
 
 
 #define dico for us data
-collection = {}
+collection = {} #contain import data from database like InnateDB and Uniprot
+blastData = {} #contain data parsed from xml file blast
 
 #####
 # Functions
@@ -76,6 +77,11 @@ if args.COMMANDS == 'blast':
             blast.exportFasta(collection, args.output, int(args.number))
         else:
             blast.exportFasta(collection, args.output)
+    #parse a xml file
+    if args.blast:
+        for file in args.blast:
+            log.info('parsing a xml blast result')
+            blast.tblastn(file, blastData)
 
 
 log.debug("end code")

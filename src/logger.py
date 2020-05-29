@@ -33,7 +33,10 @@ parser.add_argument('COMMANDS', type=str, choices=['parser', 'blast'],
 parser.add_argument('-u', '--uniprot', nargs='+', type=str,
                     help='xml file path to read the data')
 parser.add_argument('-i', '--innatedb', nargs='+', type=str,
-                    help='tsv file path to save the data')
+                    help='tsv file path to data from innatdb')
+
+parser.add_argument('-b', '--blast', nargs='+', type=str,
+                    help='xml file path to data from a blast')
 
 parser.add_argument('-n', '--number', type=int,
                     help='to enter a number')
