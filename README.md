@@ -5,7 +5,7 @@ A **F**inder **D**uplicated **G**enes in **B**at**M**an (*Homo Sapiens*)
 # Introduction
 
 
-This pipeline was created for the intership of 2 students in master 2 in [*Université Lyon 1*](https://www.univ-lyon1.fr/).
+This pipeline was created for the internship of 2 students in master 2 in [*Université Lyon 1*](https://www.univ-lyon1.fr/).
 
 *Authors* :
 - **Thoto** ([Théophile Tesseraud](mailto:theophile.tesseraud@gmail.com))
@@ -25,7 +25,7 @@ This command allow parse files, like xml (from Uniprot) or tsv (from [innatdb](h
 
 Options available with parse are :
 - -o file : to export data in a data file, this file will we be loading
-- -x file : to parse a xml file from uniprot
+- -u file : to parse a xml file from uniprot
 - -i file : to parse a tsv file from innatdb
 
 If you want to parse multi file, it’s possible ! In fact, you can give multi path or file in arguments, like `-i file1 file2 file3`.
@@ -37,14 +37,22 @@ If you want to parse multi file, it’s possible ! In fact, you can give multi p
 
 ## `blast`
 
-This command
+This commands allow user to manipulate a blast result.
 
 Options available with parse are :
-- -o : to export sequence in a fasta file
+- -fa : to export sequence in a fasta file
 - -n : the n first gene (n is optional, by default, with -o, is all genes). If n is < 0 (like `-n -20`), the genes will random draw.
 - -b : to parse a xml file from a tblastn.
+- -o : to export results of blast
+
+If you want to export a xml blast result you can apply a filter to exporting data. The filter can take arguments like :
+- -e : to define a maximum of E-Value
+- -id : to define a percent of identity
+- -p : to define a percent positive
+- -c : to define a maximum of coverage between query and subject
+- -n : to define a number of gene to exporting
 
 ## Other option available
 
-- -l file : to load existings data, their data would be created by FDGBM with -o option.
+- -l file : to load existing data, their data would be created by FDGBM with -o option.
 - -v : to active verbose mode (= info level)

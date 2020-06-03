@@ -102,10 +102,10 @@ def tblastn(file, blast):
     root = tree.getroot()
     for iteration in root.findall('./BlastOutput_iterations/Iteration'):
         #a iteration is a query sequence
-        number = int(iteration[0].text)
+        numberQuery = int(iteration[0].text)
         name = iteration[2].text
         lenght = iteration[3].text
-        blast[number] = Query(number, name, lenght)
+        blast[numberQuery] = Query(numberQuery, name, lenght)
         for hit in iteration[4]:
             #a hit is a resultat of blast, a hit in xml file
             id = hit[1].text
@@ -113,7 +113,7 @@ def tblastn(file, blast):
             log.debug(queryDef)
             for hsp in hit[5]:
                 #a hsp is result of blast hit, like sequence or score… ; is hit_hsps°in xml
-                eValue = hsp.find('Hsp_evalue').text
+                eValue = float(hsp.find('Hsp_evalue').text)
                 gaps = int(hsp.find('Hsp_gaps').text)
                 identity = int(hsp.find('Hsp_identity').text)
                 positive = int(hsp.find('Hsp_positive').text)
@@ -121,7 +121,47 @@ def tblastn(file, blast):
                 mSeq = hsp.find('Hsp_midline').text
                 hSeq = hsp.find('Hsp_hseq').text
                 scores = {'eValue':eValue, 'gaps':gaps, 'identity':identity, 'positive':positive}
-                blast[number][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
+                blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
                 count += 1
     log.info(str(len(blast)) + ' sequences was submited')
     log.info(str(count) + ' sequences in total')
+
+def printResult(blast, numberQuery, id, seq = False):
+    bufferTexte = ''
+    bufferTexte += id + ' ' + blast[numberQuery][id].name + '\n'
+    if seq:
+        bufferTexte += '\n' + blast[numberQuery][id].hSeq + '\n'
+    return bufferTexte
+
+def export(file, blast, filter):
+    """
+    Function to export data parsed from xml blast
+    IN : dico blast : blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
+    OUT : file
+    """
+    def writer(file, text):
+        file = open(file, 'w')
+        for elementString in text:
+            delimiter = '\n'
+            file.write(elementString + delimiter)
+        file.close
+
+    bufferFile = '' #text will write in file
+    header = """FDGBM by Odd 2020
+    results parsed from a xmlFile tblastn\n"""
+
+    #requests in data
+    totalCount = 0
+    for numberQuery in blast:
+        #blast[numberQuery] is an object
+        count = 0
+        for id in blast[numberQuery]:
+            if (filter['eValue'] is not None and blast[numberQuery][id].scores['eValue'] <= filter['eValue']) or (filter['idt'] is not None and blast[numberQuery][id].scores['identity'] >= filter['idt']) or (filter['pst'] is not None and blast[numberQuery][id].scores['positive'] >= filter['pst']):
+                bufferFile += printResult(blast, numberQuery, id)
+                count += 1
+        totalCount += count
+        log.info(str(count) + ' hits found for id ' + str(blast[numberQuery].name))
+    footer = 'Total hits found = ' + str(totalCount)
+
+    #write in file
+    writer(file, [header, bufferFile, footer])

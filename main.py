@@ -71,17 +71,24 @@ if args.COMMANDS == "parser":
 #####
 if args.COMMANDS == 'blast':
     #generate a fasta file
-    if args.output and verifFile(args.output):
-        log.info('export data in ' + args.output)
+    if args.fasta and verifFile(args.fasta):
+        log.info('export data in ' + args.fasta)
         if args.number:
-            blast.exportFasta(collection, args.output, int(args.number))
+            blast.exportFasta(collection, args.fasta, int(args.number))
         else:
-            blast.exportFasta(collection, args.output)
+            blast.exportFasta(collection, args.fasta)
     #parse a xml file
     if args.blast:
         for file in args.blast:
             log.info('parsing a xml blast result')
             blast.tblastn(file, blastData)
-
+    #export data parsed from xml
+    if args.output and verifFile(args.output):
+        #make a dico contain parameters use to filter data
+        #recall : parameters availables are : eValue, identity, positive, cover and number
+        #consult README for more informations
+        filter = {'eValue':args.evalue, 'idt':args.identity, 'pst':args.positive,
+                'cover':args.cover, 'number':args.number}
+        blast.export(args.output, blastData, filter)
 
 log.debug("end code")
