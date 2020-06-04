@@ -7,6 +7,9 @@
 #      Sub module to blast
 ##########################################################
 import random
+import requests
+import time
+import re
 import xml.etree.ElementTree as ET
 
 from src.logger import logger as log
@@ -29,6 +32,10 @@ class Hit():
         self.qSeq = qSeq
         self.hSeq = hSeq
         self.mSeq = mSeq
+
+        #add RefSeq if present in name
+        if re.compile('X[MPR]\_[0-9]+.?[0-9]?').search(name):
+            self.refseq = re.findall('X[MPR]\_[0-9]+.?[0-9]?', name)[0].rstrip()
 
     def __repr__(self):
         print(self.id)
@@ -128,7 +135,7 @@ def tblastn(file, blast):
 
 def printResult(blast, numberQuery, id, seq = False):
     bufferTexte = ''
-    bufferTexte += id + ' ' + blast[numberQuery][id].name + '\n'
+    bufferTexte += id + '\t' + blast[numberQuery][id].name + '\n'
     if seq:
         bufferTexte += '\n' + blast[numberQuery][id].hSeq + '\n'
     return bufferTexte
@@ -140,28 +147,68 @@ def export(file, blast, filter):
     OUT : file
     """
     def writer(file, text):
+        """
+        text must be a list (a tuple is better) with a header, the main content and a footer
+        """
         file = open(file, 'w')
-        for elementString in text:
-            delimiter = '\n'
-            file.write(elementString + delimiter)
+        delimiter = '\n'
+        file.write(str(text[0]) + delimiter)
+        if isinstance(text[1], list):
+            for elementString in text:
+                file.write(str(elementString) + delimiter)
+        else:
+            file.write(str(text[1]) + delimiter)
+        file.write(str(text[2]) + delimiter)
         file.close
 
-    bufferFile = '' #text will write in file
-    header = """FDGBM by Odd 2020
-    results parsed from a xmlFile tblastn\n"""
+    bufferText = '' #text will write in file
+    header = "FDGBM by Odd 2020\nresults parsed from a xmlFile tblastn\n"
 
     #requests in data
     totalCount = 0
     for numberQuery in blast:
         #blast[numberQuery] is an object
         count = 0
+        listAccNCBI = []
         for id in blast[numberQuery]:
+            #id === Hit_id
             if (filter['eValue'] is not None and blast[numberQuery][id].scores['eValue'] <= filter['eValue']) or (filter['idt'] is not None and blast[numberQuery][id].scores['identity'] >= filter['idt']) or (filter['pst'] is not None and blast[numberQuery][id].scores['positive'] >= filter['pst']):
-                bufferFile += printResult(blast, numberQuery, id)
+                #prepare text
+                #bufferText += printResult(blast, numberQuery, id)
+                #list ncbi accession
+                listAccNCBI.append(blast[numberQuery][id].refseq)
                 count += 1
         totalCount += count
+        #get isosoform from NCBI by accession
+        isoformsList = []
+        for accRefSeq in listAccNCBI:
+            #url request to ncbi
+            prefixUrl = 'https://www.ncbi.nlm.nih.gov/gene/?term='
+            suffixUrl = '&report=gene_table&format=text'
+            danny = True #is a simple boolean variable to requet ncbi…
+            essai = 0 #number of try to request ncbi
+            while danny:
+                try:
+                    r = requests.get(prefixUrl + accRefSeq + suffixUrl)
+                    if r.ok:
+                        danny = False
+                except Exception as e:
+                    log.debug(e.code)
+                    if essai < 5:
+                        time.sleep(5)
+                        essai += 1
+                    else:
+                        danny = False
+            #regex to parse text
+            ##regex = variant.*(X[MPR]\_[0-9]+.?[0-9]?)
+            isoformsList.append(re.findall('variant.*(X[MPR]\_[0-9]+.?[0-9]?)', r.text))
+        #remove isoform if in listAccNCBI
+        goodListAccNCBI = []
+        for accRefSeq in listAccNCBI:
+            if accRefSeq not in isoformsList:
+                goodListAccNCBI.append(accRefSeq)
+        #finish for a query
+        #export results
+        footer = 'Total hits found = ' + str(totalCount)
+        writer(str(blast[numberQuery].name) + '.txt', [header, goodListAccNCBI, footer])
         log.info(str(count) + ' hits found for id ' + str(blast[numberQuery].name))
-    footer = 'Total hits found = ' + str(totalCount)
-
-    #write in file
-    writer(file, [header, bufferFile, footer])
