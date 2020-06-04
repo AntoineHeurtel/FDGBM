@@ -10,6 +10,8 @@ import random
 import requests
 import time
 import re
+import json
+import os
 import xml.etree.ElementTree as ET
 
 from src.logger import logger as log
@@ -140,6 +142,7 @@ def printResult(blast, numberQuery, id, seq = False):
         bufferTexte += '\n' + blast[numberQuery][id].hSeq + '\n'
     return bufferTexte
 
+
 def export(file, blast, filter):
     """
     Function to export data parsed from xml blast
@@ -152,20 +155,37 @@ def export(file, blast, filter):
         """
         file = open(file, 'w')
         delimiter = '\n'
+        #header
         file.write(str(text[0]) + delimiter)
+        #body
         if isinstance(text[1], list):
-            for elementString in text:
+            for elementString in text[1]:
                 file.write(str(elementString) + delimiter)
         else:
             file.write(str(text[1]) + delimiter)
+        #footer
         file.write(str(text[2]) + delimiter)
         file.close
+
+    def loadIsoform(file = 'isoformsList.json', read = False, write = False):
+        """
+        simple fonction to load an existing list of RefSeq
+        """
+        if read:
+            if not os.path.exists(file):
+                return {}
+            with open(file, 'r') as inputfile:
+                return json.load(inputfile)
+        if write:
+            with open(file, 'w') as outfile:
+                json.dump(isoformsDic, outfile)
 
     bufferText = '' #text will write in file
     header = "FDGBM by Odd 2020\nresults parsed from a xmlFile tblastn\n"
 
     #requests in data
     totalCount = 0
+    isoformsDic = loadIsoform(file = 'isoformsList.json', read = True)
     for numberQuery in blast:
         #blast[numberQuery] is an object
         count = 0
@@ -182,26 +202,32 @@ def export(file, blast, filter):
         #get isosoform from NCBI by accession
         isoformsList = []
         for accRefSeq in listAccNCBI:
-            #url request to ncbi
-            prefixUrl = 'https://www.ncbi.nlm.nih.gov/gene/?term='
-            suffixUrl = '&report=gene_table&format=text'
-            danny = True #is a simple boolean variable to requet ncbi…
-            essai = 0 #number of try to request ncbi
-            while danny:
-                try:
-                    r = requests.get(prefixUrl + accRefSeq + suffixUrl)
-                    if r.ok:
-                        danny = False
-                except Exception as e:
-                    log.debug(e.code)
-                    if essai < 5:
-                        time.sleep(5)
-                        essai += 1
-                    else:
-                        danny = False
-            #regex to parse text
-            ##regex = variant.*(X[MPR]\_[0-9]+.?[0-9]?)
-            isoformsList.append(re.findall('variant.*(X[MPR]\_[0-9]+.?[0-9]?)', r.text))
+            #check if isoform in json file
+            if accRefSeq in isoformsDic:
+                isoformsList.extend(isoformsDic[accRefSeq])
+            else:
+                #url request to ncbi
+                prefixUrl = 'https://www.ncbi.nlm.nih.gov/gene/?term='
+                suffixUrl = '&report=gene_table&format=text'
+                danny = True #is a simple boolean variable to requet ncbi…
+                essai = 0 #number of try to request ncbi
+                while danny:
+                    try:
+                        r = requests.get(prefixUrl + accRefSeq + suffixUrl)
+                        if r.ok:
+                            danny = False
+                    except Exception as e:
+                        log.debug(e.code)
+                        if essai < 5:
+                            time.sleep(5)
+                            essai += 1
+                        else:
+                            danny = False
+                #regex to parse text
+                ##regex = variant.*(X[MPR]\_[0-9]+.?[0-9]?)
+                isoforms = re.findall('variant.*(X[MPR]\_[0-9]+.?[0-9]?)', r.text)
+                isoformsList.extend(isoforms)
+                isoformsDic[accRefSeq] = isoforms
         #remove isoform if in listAccNCBI
         goodListAccNCBI = []
         for accRefSeq in listAccNCBI:
@@ -211,4 +237,5 @@ def export(file, blast, filter):
         #export results
         footer = 'Total hits found = ' + str(totalCount)
         writer(str(blast[numberQuery].name) + '.txt', [header, goodListAccNCBI, footer])
+        loadIsoform(file = 'isoformsList.json', write = True)
         log.info(str(count) + ' hits found for id ' + str(blast[numberQuery].name))
