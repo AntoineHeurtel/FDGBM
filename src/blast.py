@@ -25,22 +25,29 @@ class Query(dict):
         self.name = name
         self.lenght = lenght
 
+    def __repr__(self):
+        print(self.number + ' ' + self.name)
+
 
 class Hit():
-    def __init__(self, id, name, scores, qSeq, hSeq, mSeq):
+    def __init__(self, id, name, scores, qSeq, hSeq, mSeq, hSeqLen):
         self.id = id
         self.name = name
         self.scores = scores #dico
         self.qSeq = qSeq
         self.hSeq = hSeq
         self.mSeq = mSeq
+        self.lenght = hSeqLen
 
         #add RefSeq if present in name
         if re.compile('X[MPR]\_[0-9]+.?[0-9]?').search(name):
             self.refseq = re.findall('X[MPR]\_[0-9]+.?[0-9]?', name)[0].rstrip()
+        #add specie if present
+        if re.compile('PREDICTED: ([A-z]+.[A-z]+)').search(name):
+            self.specie = re.findall('PREDICTED: ([A-z]+.[A-z]+)', name)[0].rstrip()
 
     def __repr__(self):
-        print(self.id)
+        print(self.id + ' ' + self.name)
 
 ##############################
 # Fonctions
@@ -129,8 +136,9 @@ def tblastn(file, blast):
                 qSeq = hsp.find('Hsp_qseq').text
                 mSeq = hsp.find('Hsp_midline').text
                 hSeq = hsp.find('Hsp_hseq').text
+                hSeqLen = int(hsp.find('Hsp_align-len').text)
                 scores = {'eValue':eValue, 'gaps':gaps, 'identity':identity, 'positive':positive}
-                blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
+                blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq, hSeqLen)
                 count += 1
     log.info(str(len(blast)) + ' sequences was submited')
     log.info(str(count) + ' sequences in total')
@@ -149,23 +157,6 @@ def export(file, blast, filter):
     IN : dico blast : blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
     OUT : file
     """
-    def writer(file, text):
-        """
-        text must be a list (a tuple is better) with a header, the main content and a footer
-        """
-        file = open(file, 'w')
-        delimiter = '\n'
-        #header
-        file.write(str(text[0]) + delimiter)
-        #body
-        if isinstance(text[1], list):
-            for elementString in text[1]:
-                file.write(str(elementString) + delimiter)
-        else:
-            file.write(str(text[1]) + delimiter)
-        #footer
-        file.write(str(text[2]) + delimiter)
-        file.close
 
     def loadIsoform(file = 'isoformsList.json', read = False, write = False):
         """
@@ -180,62 +171,98 @@ def export(file, blast, filter):
             with open(file, 'w') as outfile:
                 json.dump(isoformsDic, outfile)
 
-    bufferText = '' #text will write in file
-    header = "FDGBM by Odd 2020\nresults parsed from a xmlFile tblastn\n"
 
     #requests in data
     totalCount = 0
     isoformsDic = loadIsoform(file = 'isoformsList.json', read = True)
+
     for numberQuery in blast:
-        #blast[numberQuery] is an object
+        #blast[numberQuery] is an object Query
         count = 0
-        listAccNCBI = []
+        listAccNCBI = [] #list of all RefSeq returned by tblastn
         for id in blast[numberQuery]:
-            #id === Hit_id
-            if (filter['eValue'] is not None and blast[numberQuery][id].scores['eValue'] <= filter['eValue']) or (filter['idt'] is not None and blast[numberQuery][id].scores['identity'] >= filter['idt']) or (filter['pst'] is not None and blast[numberQuery][id].scores['positive'] >= filter['pst']):
+            ##blast[numberQuery][id] === Hit_id
+            ##calculated the percent identity
+            identityCalculated = blast[numberQuery][id].scores['identity'] / blast[numberQuery][id].lenght * 100
+            if filter['idt'] is not None and identityCalculated >= filter['idt']:
                 #prepare text
-                #bufferText += printResult(blast, numberQuery, id)
                 #list ncbi accession
-                listAccNCBI.append(blast[numberQuery][id].refseq)
+                ##tuple because we need id to export results
+                listAccNCBI.append((blast[numberQuery][id].refseq, id))
                 count += 1
         totalCount += count
-        #get isosoform from NCBI by accession
-        isoformsList = []
-        for accRefSeq in listAccNCBI:
-            #check if isoform in json file
-            if accRefSeq in isoformsDic:
-                isoformsList.extend(isoformsDic[accRefSeq])
-            else:
+        log.info(f"{blast[numberQuery].name} : {count} hits filtred on {totalCount} tblastn hits")
+
+        ##get isosoform from NCBI by accession
+        #isoformsList = [] #list of tuple (refSeq, length)
+        for accRefSeq_Name in listAccNCBI:
+            ##check if isoform in json file, else get from ncbi
+            if accRefSeq_Name[0] not in isoformsDic:
+            #if accRefSeq_Name[0] not in isoformsDic or len(isoformsDic[accRefSeq_Name[0]]) == 0:
                 #url request to ncbi
                 prefixUrl = 'https://www.ncbi.nlm.nih.gov/gene/?term='
                 suffixUrl = '&report=gene_table&format=text'
-                danny = True #is a simple boolean variable to requet ncbi…
+                ncbi = True #is a simple boolean variable to requet ncbi…
                 essai = 0 #number of try to request ncbi
-                while danny:
+                while ncbi:
                     try:
-                        r = requests.get(prefixUrl + accRefSeq + suffixUrl)
+                        r = requests.get(prefixUrl + accRefSeq_Name[0] + suffixUrl)
                         if r.ok:
-                            danny = False
+                            ncbi = False
                     except Exception as e:
                         log.debug(e.code)
                         if essai < 5:
                             time.sleep(5)
                             essai += 1
                         else:
-                            danny = False
-                #regex to parse text
-                ##regex = variant.*(X[MPR]\_[0-9]+.?[0-9]?)
-                isoforms = re.findall('variant.*(X[MPR]\_[0-9]+.?[0-9]?)', r.text)
-                isoformsList.extend(isoforms)
-                isoformsDic[accRefSeq] = isoforms
-        #remove isoform if in listAccNCBI
-        goodListAccNCBI = []
-        for accRefSeq in listAccNCBI:
-            if accRefSeq not in isoformsList:
-                goodListAccNCBI.append(accRefSeq)
-        #finish for a query
-        #export results
-        footer = 'Total hits found = ' + str(totalCount)
-        writer(str(blast[numberQuery].name) + '.txt', [header, goodListAccNCBI, footer])
-        loadIsoform(file = 'isoformsList.json', write = True)
-        log.info(str(count) + ' hits found for id ' + str(blast[numberQuery].name))
+                            ncbi = False
+                #regex to parse text : get variant number/RefSeq and lenght
+                ##regex = variant.*(X[MPR]\_[0-9]+.?[0-9]?).*length:.([0-9]+)
+                #isoform is a list of tuple
+                isoforms = re.findall('variant.*(X[MPR]\_[0-9]+.?[0-9]?).*length:.([0-9]+)', r.text)
+                isoformsDic[accRefSeq_Name[0]] = isoforms
+                log.debug(f"new isoform {accRefSeq_Name} : {isoforms}")
+
+        ##keep the longgest isoform
+        goodListAccNCBI = [] #all RefSeq blast filtred and with longgest isoform
+        list_accRefSeq_Name_removed = [] #all RefSeq not keep cause smaller isoform
+        for accRefSeq_Name in listAccNCBI:
+            buffer_list_isoform = isoformsDic[accRefSeq_Name[0]]
+            ##case no isoform
+            if len(buffer_list_isoform) == 0:
+                if accRefSeq_Name[0] not in goodListAccNCBI:
+                    goodListAccNCBI.append(accRefSeq_Name[0])
+            ##case multiple isoform
+            else:
+                buffer_list_sorted = sorted(buffer_list_isoform, key=lambda x: int(x[1]), reverse=True)
+                if buffer_list_sorted[0][0] not in list_accRefSeq_Name_removed and buffer_list_sorted[0][0] not in goodListAccNCBI:
+                    goodListAccNCBI.append(buffer_list_sorted[0][0])
+                else:
+                    pass
+                ##conserving list of RefSeq removed
+                for tuple_element in buffer_list_sorted[1:]:
+                    if tuple_element[0] not in list_accRefSeq_Name_removed:
+                        list_accRefSeq_Name_removed.append(tuple_element[0])
+
+
+        ##write results
+        file = open('export/' + blast[numberQuery].name + '.txt', 'w')
+        ##write header
+        header = "#FDGBM by Odd 2020\n#results parsed from a xml tblastn\n"
+        file.write(header)
+        ## write body
+        for tupleRefID in listAccNCBI:
+            if tupleRefID[0] in goodListAccNCBI:
+                specie = blast[numberQuery][tupleRefID[1]].specie
+                name = blast[numberQuery][tupleRefID[1]].name
+                file.write(f"{specie}\t{name}\n")
+                log.info(f"{specie}\t{name}")
+        ##write footer
+        # TODO: improve statistiques footer (min max evalue… id…)
+        footer = '#Total hits exported : ' + str(len(goodListAccNCBI)) + '\n#Total hits found by blast : ' + str(totalCount) + '\n'
+        if filter['idt'] is not None:
+            footer += '#value of filtred identity : ' + str(filter['idt'])
+        file.write(footer)
+        file.close
+        log.debug(f"{blast[numberQuery].name} : {len(goodListAccNCBI)} hits exported from {count} hits filtred")
+    loadIsoform(file = 'isoformsList.json', write = True)

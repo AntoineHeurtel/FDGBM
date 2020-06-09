@@ -46,13 +46,10 @@ Options available with parse are :
 - -o : to export results of blast
 
 If you want to export a xml blast result you can apply a filter to exporting data. The filter can take arguments like :
-- -e : to define a maximum of E-Value
 - -id : to define a percent of identity
-- -p : to define a percent positive
-- -c : to define a maximum of coverage between query and subject
 - -n : to define a number of gene to exporting
 
-## Other option available
+## Other option available with any command
 
 - -l file : to load existing data, their data would be created by FDGBM with -o option.
 - -v : to active verbose mode (= info level)

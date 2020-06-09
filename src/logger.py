@@ -39,14 +39,11 @@ parser.add_argument('-b', '--blast', nargs='+', type=str,
                     help='xml file path to data from a blast')
 parser.add_argument('-fa', '--fasta', type=str,
                     help='path to fasta file export')
-parser.add_argument('-e', '--evalue', type=float,
-                    help='to enter a E-Value')
+#parser.add_argument('-e', '--evalue', type=float,help='to enter a E-Value')
 parser.add_argument('-id', '--identity', type=int,
                     help='to enter a identity value')
-parser.add_argument('-p', '--positive', type=int,
-                    help='to enter a positive value')
-parser.add_argument('-c', '--cover', type=int,
-                    help='to enter a purcent cover')
+#parser.add_argument('-p', '--positive', type=int,help='to enter a positive value')
+#parser.add_argument('-c', '--cover', type=int, help='to enter a purcent cover')
 
 parser.add_argument('-n', '--number', type=int,
                     help='to enter a number')

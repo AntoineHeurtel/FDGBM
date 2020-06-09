@@ -87,8 +87,8 @@ if args.COMMANDS == 'blast':
         #make a dico contain parameters use to filter data
         #recall : parameters availables are : eValue, identity, positive, cover and number
         #consult README for more informations
-        filter = {'eValue':args.evalue, 'idt':args.identity, 'pst':args.positive,
-                'cover':args.cover, 'number':args.number}
+        #filter = {'eValue':args.evalue, 'idt':args.identity, 'pst':args.positive,'cover':args.cover, 'number':args.number}
+        filter = {'idt':args.identity}
         blast.export(args.output, blastData, filter)
 
 log.debug("end code")
