@@ -151,7 +151,7 @@ def printResult(blast, numberQuery, id, seq = False):
     return bufferTexte
 
 
-def export(file, blast, filter):
+def parser(blast, filter):
     """
     Function to export data parsed from xml blast
     IN : dico blast : blast[numberQuery][id] = Hit(id, queryDef, scores, qSeq, hSeq, mSeq)
@@ -172,12 +172,13 @@ def export(file, blast, filter):
                 json.dump(isoformsDic, outfile)
 
 
-    #requests in data
-    totalCount = 0
+    ##requests in data
     isoformsDic = loadIsoform(file = 'isoformsList.json', read = True)
+    parsedData = {} #contain results data
 
     for numberQuery in blast:
         #blast[numberQuery] is an object Query
+        totalCount = 0
         count = 0
         listAccNCBI = [] #list of all RefSeq returned by tblastn
         for id in blast[numberQuery]:
@@ -190,8 +191,8 @@ def export(file, blast, filter):
                 ##tuple because we need id to export results
                 listAccNCBI.append((blast[numberQuery][id].refseq, id))
                 count += 1
-        totalCount += count
-        log.info(f"{blast[numberQuery].name} : {count} hits filtred on {totalCount} tblastn hits")
+            totalCount += 1
+        #log.info(f"{blast[numberQuery].name} : {count} hits filtred on {totalCount} tblastn hits")
 
         ##get isosoform from NCBI by accession
         #isoformsList = [] #list of tuple (refSeq, length)
@@ -210,7 +211,7 @@ def export(file, blast, filter):
                         if r.ok:
                             ncbi = False
                     except Exception as e:
-                        log.debug(e.code)
+                        log.debug(e)
                         if essai < 5:
                             time.sleep(5)
                             essai += 1
@@ -244,25 +245,79 @@ def export(file, blast, filter):
                     if tuple_element[0] not in list_accRefSeq_Name_removed:
                         list_accRefSeq_Name_removed.append(tuple_element[0])
 
-
         ##write results
         file = open('export/' + blast[numberQuery].name + '.txt', 'w')
         ##write header
         header = "#FDGBM by Odd 2020\n#results parsed from a xml tblastn\n"
         file.write(header)
         ## write body
+        listSpecie = []
+        count = 0
         for tupleRefID in listAccNCBI:
             if tupleRefID[0] in goodListAccNCBI:
+                # TODO: few element in goodListAccNCBI will not write in file
                 specie = blast[numberQuery][tupleRefID[1]].specie
                 name = blast[numberQuery][tupleRefID[1]].name
+                listSpecie.append(specie)
                 file.write(f"{specie}\t{name}\n")
-                log.info(f"{specie}\t{name}")
+                log.debug(f"{specie}\t{name}")
+                count += 1
+        parsedData[blast[numberQuery].name] = {}
+        parsedData[blast[numberQuery].name]['result'] = listSpecie
         ##write footer
         # TODO: improve statistiques footer (min max evalue… id…)
-        footer = '#Total hits exported : ' + str(len(goodListAccNCBI)) + '\n#Total hits found by blast : ' + str(totalCount) + '\n'
+        #footer = '#Total hits exported : ' + str(len(goodListAccNCBI)) + '\n#Total hits found by blast : ' + str(totalCount) + '\n'
+        footer = '#Total hits exported : ' + str(count) + '\n#Total hits found by blast : ' + str(totalCount) + '\n'
         if filter['idt'] is not None:
             footer += '#value of filtred identity : ' + str(filter['idt'])
         file.write(footer)
         file.close
-        log.debug(f"{blast[numberQuery].name} : {len(goodListAccNCBI)} hits exported from {count} hits filtred")
+        #log.info(f"{blast[numberQuery].name} : {len(goodListAccNCBI)} hits exported from {len(listAccNCBI)} hits filtred on {totalCount} tblastn hits")
+        log.info(f"{blast[numberQuery].name} : {count} hits exported from {len(listAccNCBI)} hits filtred on {totalCount} tblastn hits")
+        ##add total count and other stat
+        parsedData[blast[numberQuery].name]['stat'] = {'totalBlast':totalCount, 'totalExported':count}
     loadIsoform(file = 'isoformsList.json', write = True)
+    return parsedData
+
+def export(fileName, parsedData):
+    """
+    exporter les résultats tabulés et tout…
+    """
+    fileOutput = open(fileName, 'w')
+    results = {}
+
+    log.debug(parsedData)
+    listSpecie = []
+    for geneName in parsedData:
+        if len(parsedData[geneName]['result']) == 0:
+            if geneName not in results:
+                results[geneName] = {}
+            results[geneName]['noSpecie'] = 0
+        for specie in parsedData[geneName]['result']:
+            if specie not in listSpecie:
+                listSpecie.append(specie)
+            count = parsedData[geneName]['result'].count(specie)
+            if geneName not in results:
+                results[geneName] = {}
+            results[geneName][specie] = count
+
+    header = 'gene\ttotal Blast found\ttotal exported'
+    for specie in listSpecie:
+        header += '\t' + specie
+    fileOutput.write(header + '\n')
+    log.info(header)
+
+    for geneName in results:
+        line = f"{geneName}\t{parsedData[geneName]['stat']['totalBlast']}\t{parsedData[geneName]['stat']['totalExported']}"
+        if geneName == 'noSpecie':
+            for specie in listSpecie:
+                line += '0\t'
+        else:
+            for specie in listSpecie:
+                try:
+                    line += '\t' + str(results[geneName][specie])
+                except KeyError:
+                    line += '\t' + '0' #warning, 0 result and/or the specie was not found by blast
+        fileOutput.write(line + '\n')
+        log.info(line)
+    fileOutput.close()

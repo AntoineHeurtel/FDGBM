@@ -4,6 +4,7 @@
 
 ##########################################################
 # Librairie pour le stage M1 2020  #
+# version 1.1-beta
 ##########################################################
 import os
 import src.parser as parser
@@ -82,13 +83,14 @@ if args.COMMANDS == 'blast':
         for file in args.blast:
             log.info('parsing a xml blast result')
             blast.tblastn(file, blastData)
-    #export data parsed from xml
-    if args.output and verifFile(args.output):
-        #make a dico contain parameters use to filter data
-        #recall : parameters availables are : eValue, identity, positive, cover and number
-        #consult README for more informations
-        #filter = {'eValue':args.evalue, 'idt':args.identity, 'pst':args.positive,'cover':args.cover, 'number':args.number}
-        filter = {'idt':args.identity}
-        blast.export(args.output, blastData, filter)
+        #export data parsed from xml
+        if args.output and verifFile(args.output):
+            #make a dico contain parameters use to filter data
+            #recall : parameters availables are : eValue, identity, positive, cover and number
+            #consult README for more informations
+            #filter = {'eValue':args.evalue, 'idt':args.identity, 'pst':args.positive,'cover':args.cover, 'number':args.number}
+            filter = {'idt':args.identity}
+            parsedData = blast.parser(blastData, filter)
+            blast.export(args.output, parsedData)
 
 log.debug("end code")

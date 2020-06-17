@@ -13,6 +13,8 @@ This pipeline was created for the internship of 2 students in master 2 in [*Univ
 
 This is a librairy python3.
 
+Package dependant : `requests`
+
 # Commands
 
 Globaly the commands format is :  
@@ -43,13 +45,14 @@ Options available with parse are :
 - -fa : to export sequence in a fasta file
 - -n : the n first gene (n is optional, by default, with -o, is all genes). If n is < 0 (like `-n -20`), the genes will random draw.
 - -b : to parse a xml file from a tblastn.
-- -o : to export results of blast
+- -o : to export results of blast in a tabular file
 
 If you want to export a xml blast result you can apply a filter to exporting data. The filter can take arguments like :
-- -id : to define a percent of identity
+- -id : to define a percent filter of identity
 - -n : to define a number of gene to exporting
 
 ## Other option available with any command
 
 - -l file : to load existing data, their data would be created by FDGBM with -o option.
 - -v : to active verbose mode (= info level)
+- -f : to force the overwrite
