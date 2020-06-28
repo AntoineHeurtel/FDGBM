@@ -40,11 +40,17 @@ class Hit():
         self.lenght = hSeqLen
 
         #add RefSeq if present in name
-        if re.compile('X[MPR]\_[0-9]+.?[0-9]?').search(name):
-            self.refseq = re.findall('X[MPR]\_[0-9]+.?[0-9]?', name)[0].rstrip()
+        if re.compile('[XN][MPR]\_[0-9]+.?[0-9]?').search(name):
+            self.refseq = re.findall('[XN][MPR]\_[0-9]+.?[0-9]?', name)[0].rstrip()#or regex [A-Z][A-Z]\_[0-9]+.?[0-9]?
+        else:
+            self.refseq = ''
+            log.warning(f"Hit {self.id}, {self.name} not have refseq")
         #add specie if present
         if re.compile('PREDICTED: ([A-z]+.[A-z]+)').search(name):
             self.specie = re.findall('PREDICTED: ([A-z]+.[A-z]+)', name)[0].rstrip()
+        else:
+            self.specie = 'unknow'
+            log.warning(f"Hit {self.id}, {self.name} not have specie")
 
     def __repr__(self):
         print(self.id + ' ' + self.name)
