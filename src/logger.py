@@ -54,7 +54,7 @@ parser.add_argument('-l', '--load', nargs='+', type=str,
 parser.add_argument('-f', '--force', action="store_true",
                     help='force action (write)')
 parser.add_argument('-v', '--verbose', action="store_true",
-                    help="Active le mode verbose (mode level debug INFO)")
+                    help="Enable verbose mode (mode level debug INFO)")
 args = parser.parse_args()
 
 
@@ -64,13 +64,13 @@ args = parser.parse_args()
 logger = logging.getLogger()
 # if "-v" in sys.argv:
 if args.verbose:
-    LEVEL = "DEBUG"  #INFO# celui du logger
+    LEVEL = "INFO"  # celui du logger
     LOG_LEVEL = logging.INFO
-    PRINT_LEVEL = logging.DEBUG
-else:
-    LEVEL = "INFO"
-    LOG_LEVEL = logging.WARNING
     PRINT_LEVEL = logging.INFO
+else:
+    LEVEL = "WARNING"
+    LOG_LEVEL = logging.WARNING
+    PRINT_LEVEL = logging.WARNING
 logger.setLevel(LEVEL)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] :: %(message)s')
 

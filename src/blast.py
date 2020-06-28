@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# ©2020 Thot'Odd
+# ©2020 Odd
 
 ##########################################################
 # Librairie pour le stage M1 2020  #

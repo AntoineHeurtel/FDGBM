@@ -4,7 +4,7 @@
 
 ##########################################################
 # Librairie pour le stage M1 2020  #
-# version 1.1-beta
+# version 1.2
 ##########################################################
 import os
 import src.parser as parser
